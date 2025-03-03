@@ -2,16 +2,10 @@ import streamlit as st
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 
-# Initialize the language model
-llm = ChatGroq(
-    model="mixtral-8x7b-32768",
-    temperature=0.1,
-)
 
-# Streamlit app layout
+
 st.title("Website Maker Chatbot")
 
-# Initialize session state for chat history, website name, and architecture state
 if "chat_history_architecture" not in st.session_state:
     st.session_state.chat_history_architecture = []
 
@@ -38,22 +32,28 @@ if "instructions_shown_content" not in st.session_state:
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
+model_name = st.sidebar.selectbox("Select Model", ["mixtral-8x7b-32768","llama-3.1-8b-instant","gemma2-9b-it",])
 page = st.sidebar.radio("Go to", ["Architecture", "Content Creation"])
 
+llm = ChatGroq(
+    model=model_name,
+    temperature=0.1,
+)
+
 if page == "Architecture":
-    # Architecture Section
+
     st.session_state.content_created = False
 
     st.header("Architecture")
     user_input = st.chat_input("Describe your website or request an architecture change!")
 
-    # Display chat history
+
     for message in st.session_state.chat_history_architecture:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
     if user_input:
-        # If website name is not set, use the first input to set it
+
         if not st.session_state.website_name:
             st.session_state.website_name = user_input
             st.success(f"Website name set to: {user_input}")
@@ -61,7 +61,6 @@ if page == "Architecture":
         website_name = st.session_state.website_name
 
         if not st.session_state.architecture_created:
-            # Initial architecture creation
             prompt = f"""
             Design a comprehensive website architecture for {st.session_state.website_name} website by outlining all main pages along with their detailed subpages and content sections.
 
@@ -75,7 +74,6 @@ if page == "Architecture":
             """
             st.session_state.architecture_created = True
         else:
-            # Handle architecture updates based on user input
             prompt = f"""
             Update the website architecture for {st.session_state.website_name}. 
             Please modify only the following sections based on the new requirements:
@@ -84,16 +82,13 @@ if page == "Architecture":
             Keep the overall structure and hierarchy as defined in the current blueprint, ensuring intuitive navigation and a consistent user experience. Provide the updated outline incorporating only the changes mentioned above.
             """
 
-        # Define the chat prompt template
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", "You are an expert website maker."),
             ("human", prompt)
         ])
 
-        # Always update the conversation chain
         st.session_state.conversation_chain = prompt_template | llm
 
-        # Process user input
         st.session_state.chat_history_architecture.append({
             "role": "user",
             "content": user_input
@@ -102,7 +97,6 @@ if page == "Architecture":
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        # Get response from the assistant
         with st.chat_message("assistant"):
             try:
                 response = st.session_state.conversation_chain.invoke({"website_name": st.session_state.website_name})
@@ -112,7 +106,6 @@ if page == "Architecture":
 
             st.markdown(assistant_response)
 
-            # Add assistant response to chat history
             st.session_state.chat_history_architecture.append({
                 "role": "assistant",
                 "content": assistant_response
@@ -127,14 +120,13 @@ if page == "Architecture":
                 )
                 st.session_state.instructions_shown = True
 
-            # Save architecture for content creation
             st.session_state.website_architecture = assistant_response
 
     elif not st.session_state.architecture_created:
         st.info("Please enter your website name to get started or describe a change to update the architecture!")
 
 elif page == "Content Creation":
-    # Content Creation Section
+
     st.header("Content Creation")
     st.write("Last saved architecture:")
     st.write(st.session_state.website_architecture)
@@ -183,7 +175,6 @@ Ensure the content is well-structured, engaging, and relevant to the specified s
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        # Get response from the assistant
         with st.chat_message("assistant"):
             try:
                 response = st.session_state.conversation_chain.invoke({"website_architecture": st.session_state.website_architecture})
@@ -202,7 +193,6 @@ Ensure the content is well-structured, engaging, and relevant to the specified s
                 )
                 st.session_state.instructions_shown_content = True
 
-            # Add assistant response to chat history
             st.session_state.chat_history_content.append({
                 "role": "assistant",
                 "content": assistant_response
