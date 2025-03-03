@@ -130,7 +130,7 @@ if page == "Architecture":
             # Save architecture for content creation
             st.session_state.website_architecture = assistant_response
 
-    else:
+    elif not st.session_state.architecture_created:
         st.info("Please enter your website name to get started or describe a change to update the architecture!")
 
 elif page == "Content Creation":
